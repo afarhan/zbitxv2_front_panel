@@ -148,6 +148,18 @@ struct logbook_entry {
   char exchange_sent[10];
   char exchange_recv[10];
 };
+#define MAX_APS 5
+struct ap {
+	char ssid[32];
+	char key[32];
+};
+
+struct saved {
+	uint32_t magic;
+	uint64_t my_id;
+	uint16_t calibration_data[10];
+	struct ap ap_list[MAX_APS];	
+};
 #endif
 #define MAX_LOGBOOK 200
 /*Field manipulation functions */
@@ -197,3 +209,16 @@ bool in_tx();
 #define COMMAND_START '{'
 #define COMMAND_END '}'
 
+/* state of the streamer */
+
+#define STREAM_WIFI_OFFLINE 0
+#define STREAM_WIFI_CONNECTING 1
+#define STREAM_WIFI_ONLINE 2
+#define STREAM_SERVER_CONNECTING 3
+#define STREAM_SERVER_CONNECTED 5
+
+extern uint8_t stream_state;
+extern struct saved block;
+bool block_read();
+void block_write();
+void block_dump();

@@ -27,7 +27,6 @@ The procedure is as follows:
 
 #include <SPI.h>
 #include <TFT_eSPI.h>       // Hardware-specific library
-#include <EEPROM.h>
 #include "zbitx.h"
 #include "free_font.h"
 
@@ -42,18 +41,12 @@ void screen_draw_mono(const char *text, int count, int x_at, int y_at);
 /* Graphics primitives */
 
 static void screen_read_calibration(uint16_t *calibration_data){
-  
-  byte *p = (byte *)calibration_data;
-  for (int i = 0; i < 12; i++){
-    byte b = EEPROM.read(i);
-    *p++ = b;  
-  }
+	memcpy(calibration_data, block.calibration_data, sizeof(block.calibration_data));
 }
 
 void screen_init(){
   uint16_t calibration_data[10];
   
-  EEPROM.begin(512);
   tft.init();
   tft.fillScreen(SCREEN_BACKGROUND_COLOR);
   tft.setRotation(3);
@@ -68,11 +61,8 @@ void screen_init(){
     delay(200);
     tft.calibrateTouch(calibration_data, TFT_WHITE, TFT_RED, 15);
     byte *p = (byte *)calibration_data;
-    for (int i = 0; i < 12; i++){
-      byte b = *p++;
-      EEPROM.write(i, b);
-    }
-    EEPROM.commit(); 
+		memcpy(block.calibration_data, calibration_data, sizeof(calibration_data));
+		block_write();
   }
   else 
     screen_read_calibration(calibration_data);

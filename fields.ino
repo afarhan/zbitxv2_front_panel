@@ -153,8 +153,10 @@ void field_set(const char *label, const char *value, bool update_to_radio){
   else 
     f = field_get(label);
 
-  if (!f)
+
+  if (!f){
     return;
+  }
 
   if (update_to_radio)
 		field_post_to_radio(f);
@@ -172,14 +174,13 @@ void field_set(const char *label, const char *value, bool update_to_radio){
     ft8_update(value);
     f->redraw = true;
   }
-	
   //cw decoded text
   else if (!strcmp(f->label, "CONSOLE")){
     console_update(f, label, value);  
     f->redraw = true;
   }
   else if (!strcmp(f->label, "WF")){
-    uint8_t spectrum[250];
+    uint8_t spectrum[300];
     if (f->w > sizeof(spectrum)){
       Serial.println("#waterfall is too large");
       return;
@@ -190,7 +191,7 @@ void field_set(const char *label, const char *value, bool update_to_radio){
     //we take 240 points on the waterfall 
     //and zzom it in/out
     double scale = count/240.0;
-    for (int d = 0; d < f->w; d++){
+    for (int d = 0; d < f->w && d < sizeof(spectrum); d++){
 			int i = (scale * d);
       int v = value[i]-32;
       spectrum[d] = v;

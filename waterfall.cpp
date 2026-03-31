@@ -1,7 +1,7 @@
 #include <TFT_eSPI.h>
 #include "zbitx.h"
 
-static uint16_t waterfall[240*150]; //Very Arbitrary!
+static uint16_t waterfall[240*100]; //Very Arbitrary!
 static int bandwidth_stop, bandwidth_start, center_line, tx_pitch;
 
 void waterfall_bandwidth(int start, int stop, int center, int red_line){
@@ -93,7 +93,7 @@ void waterfall_line(int x, int y1, int y2, int color){
 void waterfall_draw(struct field *f){
 	if (!strcmp(f->value, "OFF"))
 			return;
-	screen_bitblt(f->x, f->y, f->w, 144, waterfall);
+	screen_bitblt(f->x, f->y, f->w, 96, waterfall);
 }
 
 //always 240 values!
@@ -109,7 +109,6 @@ void waterfall_update(struct field *f, uint8_t *bins){
 	if (!strcmp(field_get("MODE")->value, "FT8"))
 		waterfall_line(f->w/2 + tx_pitch,0,48, TFT_RED);
 
-
   int last_y = 48-waterfall[0];
   for (int i = 1; i < 240; i++){
     int y_now = 48 - (bins[i]/2);
@@ -120,7 +119,7 @@ void waterfall_update(struct field *f, uint8_t *bins){
 		//waterfall[(y_now * 240) + i] = TFT_YELLOW;
     last_y = y_now;
   }
-
+/*
   //scroll down the waterfall
   int waterfall_length = sizeof(waterfall);
 	uint16_t *w = waterfall + (240 * 49);
@@ -130,4 +129,5 @@ void waterfall_update(struct field *f, uint8_t *bins){
   for (int i = 0; i < f->w ; i++)
       w[f->w - i] = heat_map((uint16_t)bins[(int16_t)(scale * i)]);
 	//draw the central line
+*/
 }
