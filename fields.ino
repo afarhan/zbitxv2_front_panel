@@ -141,6 +141,10 @@ void field_set_panel(const char *mode){
 void field_set(const char *label, const char *value, bool update_to_radio){
   struct field *f;
 
+//  Serial1.printf("%s > [%s]\n", label, value);
+
+  if (strstr(label, "SPECTRUM"))
+    return;
   //translate a few fields 
   if (!strcmp(label, "9") || !strcmp(label, "10") || !strcmp(label, "5"))
     f = field_get("CONSOLE");
@@ -153,10 +157,11 @@ void field_set(const char *label, const char *value, bool update_to_radio){
   else 
     f = field_get(label);
 
-
   if (!f){
     return;
   }
+
+  Serial.printf("updated %s\n", label);
 
   if (update_to_radio)
 		field_post_to_radio(f);
@@ -169,7 +174,7 @@ void field_set(const char *label, const char *value, bool update_to_radio){
 		}
 	}
 	
-   //these are messages of FT8
+  //these are messages of FT8
   if(!strcmp(f->label, "FT8_LIST")){
     ft8_update(value);
     f->redraw = true;

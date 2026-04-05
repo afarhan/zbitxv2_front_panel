@@ -119,15 +119,15 @@ void waterfall_update(struct field *f, uint8_t *bins){
 		//waterfall[(y_now * 240) + i] = TFT_YELLOW;
     last_y = y_now;
   }
-/*
+
   //scroll down the waterfall
   int waterfall_length = sizeof(waterfall);
 	uint16_t *w = waterfall + (240 * 49);
   double scale = 240.0/f->w;
 
-  memmove(w+240, w, (240 * 95) * sizeof(uint16_t));
+  memmove(w+240, w, (240 * 45) * sizeof(uint16_t));
   for (int i = 0; i < f->w ; i++)
       w[f->w - i] = heat_map((uint16_t)bins[(int16_t)(scale * i)]);
 	//draw the central line
-*/
+
 }
