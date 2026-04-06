@@ -1,4 +1,5 @@
 #include <TFT_eSPI.h>       // Hardware-specific library
+#include <pico/sync.h>
 #include "zbitx.h"
 #include "logbook.h"
 #include "ft8.h"
@@ -8,7 +9,9 @@
 
 struct field *f_selected = NULL;
 extern int vswr, vfwd, vref, vbatt;
+static bool redraw_screen = false;
 
+auto_init_mutex(field_mutex);
 
 //void field_draw(struct field *f, bool all);
 
@@ -51,6 +54,7 @@ void field_clear_all(){
     f->redraw = true;
     count++;
   }
+  redraw_screen = true;
 }
 
 struct field *field_get(const char *label){
@@ -125,16 +129,17 @@ void field_set_panel(const char *mode){
   else
     strcpy(list, "MIC/TX/RX/WF/CONSOLE");  
 
-  //clear the bottom row
-  screen_fill_rect(0, SCREEN_HEIGHT - 48, SCREEN_WIDTH, 48, SCREEN_BACKGROUND_COLOR);
-  //clear the right pane
-  screen_fill_rect(240, 48, 240, SCREEN_HEIGHT - 96, SCREEN_BACKGROUND_COLOR);
   
   char *p = strtok(list, "/");
   while (p){
     field_show(p, true);
     p = strtok(NULL, "/");
   }
+  redraw_screen = true;
+  //clear the bottom row
+  //screen_fill_rect(0, SCREEN_HEIGHT - 48, SCREEN_WIDTH, 48, SCREEN_BACKGROUND_COLOR);
+  //clear the right pane
+  //screen_fill_rect(240, 48, 240, SCREEN_HEIGHT - 96, SCREEN_BACKGROUND_COLOR);
 }
 
 //set from the radio to the front panel
@@ -145,6 +150,7 @@ void field_set(const char *label, const char *value, bool update_to_radio){
 
   if (strstr(label, "SPECTRUM"))
     return;
+
   //translate a few fields 
   if (!strcmp(label, "9") || !strcmp(label, "10") || !strcmp(label, "5"))
     f = field_get("CONSOLE");
@@ -160,8 +166,6 @@ void field_set(const char *label, const char *value, bool update_to_radio){
   if (!f){
     return;
   }
-
-  Serial.printf("updated %s\n", label);
 
   if (update_to_radio)
 		field_post_to_radio(f);
@@ -768,7 +772,7 @@ void field_input(uint8_t input){
 void field_draw_all(bool all){
   struct field *f;
 
-  if (all)
+  if (all && redraw_screen)
     screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
 	
   for (f = field_list; f->type != -1; f++)
@@ -781,4 +785,5 @@ void field_draw_all(bool all){
     }
 	f = field_get("METERS");
 	smeter_draw(f);
+  redraw_screen = false;
 }
