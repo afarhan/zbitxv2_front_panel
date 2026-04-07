@@ -1,4 +1,4 @@
-#include <TFT_eSPI.h>       // Hardware-specific library
+#include "tft_ili9488.h"
 #include <pico/sync.h>
 #include "zbitx.h"
 #include "logbook.h"
@@ -10,11 +10,6 @@
 struct field *f_selected = NULL;
 extern int vswr, vfwd, vref, vbatt;
 static bool redraw_screen = false;
-
-auto_init_mutex(field_mutex);
-
-//void field_draw(struct field *f, bool all);
-
 struct field *field_list;
 
 /* Fields are controls that hold radio's controls values, they are also buttons, text fields, multiple selections, etc.
@@ -772,7 +767,7 @@ void field_input(uint8_t input){
 void field_draw_all(bool all){
   struct field *f;
 
-  if (all && redraw_screen)
+  if (all || redraw_screen)
     screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
 	
   for (f = field_list; f->type != -1; f++)

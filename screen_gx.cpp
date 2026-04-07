@@ -25,13 +25,10 @@ The procedure is as follows:
 */
 
 
-#include <SPI.h>
-#include <TFT_eSPI.h>       // Hardware-specific library
+#include "tft_ili9488.h"
 #include "zbitx.h"
-#include "free_font.h"
 
-TFT_eSPI tft = TFT_eSPI();  // Invoke custom library
-//static uint8_t waterfall[240*200]; //Very Arbitrary!
+TFT_ILI9488 tft;
 
 uint16_t font_width2[256];
 uint16_t font_width4[256];
