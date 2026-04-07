@@ -96,10 +96,11 @@ struct field *dialog_box(const char *title, char const *fields_list){
 	struct field *f_touched = NULL;
 	f_selected = NULL;
 
-	while(1){	
+	while(1){
+		core1_time = millis(); // prevent Core 0 watchdog from restarting Core 1
 		f_touched = ui_slice();
 		if (f_touched && f_touched->type == FIELD_BUTTON){
-			break;	
+			break;
 		}
 		delay(10);
 	}
