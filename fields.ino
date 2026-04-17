@@ -504,7 +504,7 @@ void smeter_draw(struct field *f){
 	}
 	int in_tx = atoi(f_tx->value);
 	 if (in_tx){
-		sprintf(temp_str, "%d W            SWR %d.%d", vfwd/10, vswr/10, vswr%10); 
+		sprintf(temp_str, "%d W            SWR %d.%d", (vfwd * vfwd)/100, vswr/10, vswr%10); 
 		screen_draw_text(temp_str, -1, f->x + 3, f->y + 1, TFT_WHITE, 2);
 		screen_draw_rect(f->x + 33,  f->y + 2, 60, 12, TFT_YELLOW);
 		screen_fill_rect(f->x + 34,  f->y + 3, vfwd, 10, TFT_RED);
@@ -607,7 +607,7 @@ void field_draw(struct field *f){
 			logbook_draw(f);
 			break;
 		case FIELD_SMETER:
-			//smeter_draw(f);
+			smeter_draw(f);
 			return; // don't fall into the default background painting
     default:
 			{

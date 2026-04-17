@@ -44,6 +44,7 @@ static void screen_read_calibration(uint16_t *calibration_data){
 void screen_init(){
   uint16_t calibration_data[10];
   
+  delay(3000);
   tft.init();
   tft.fillScreen(SCREEN_BACKGROUND_COLOR);
   tft.setRotation(3);
@@ -51,9 +52,10 @@ void screen_init(){
 
   ///calibrate the screen or retreive the calibration from EEPROM
   uint16_t x, y;
+  Serial.println("checking for calibration");
   if (screen_read(&x, &y)){
     Serial.println("#Calibrating the screen");
-     while(screen_read(&x, &y))
+    while(screen_read(&x, &y))
       delay(100);
     delay(200);
     tft.calibrateTouch(calibration_data, TFT_WHITE, TFT_RED, 15);
@@ -159,6 +161,7 @@ void screen_pixel(int x, int y, uint16_t color){
 }
 
 bool screen_read(uint16_t *x, uint16_t *y){
-  return tft.getTouch(x, y);  
+  bool is_touched = tft.getTouch(x, y);  
+  return is_touched;
 }
 
