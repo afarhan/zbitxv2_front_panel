@@ -525,6 +525,48 @@ int16_t TFT_ILI9488::_drawChar(uint8_t c, int32_t x, int32_t y) {
     uint8_t fg = ((_textColor >> 5) & 0x3F) << 2;
     uint8_t fb = (_textColor & 0x1F) << 3;
 
+    if (_textFont == 1) {
+        // GLCD 5×7 bitmap: 5 bytes per char, each byte is a column
+        // (bit 0 = top pixel).  Rendered as 6 px wide (1 px right-side spacing)
+        // and 8 px tall (row 7 is inter-line spacing, always blank).
+        const uint8_t *glyph = font + (uint16_t)c * 5;
+        const uint8_t  gw = 5;
+
+        _beginTransaction();
+        for (uint8_t row = 0; row < 7; row++) {
+            uint8_t run_start = 0;
+            bool    in_run    = false;
+
+            for (uint8_t col = 0; col < gw; col++) {
+                bool set = (pgm_read_byte(glyph + col) >> row) & 1;
+                if (set && !in_run) {
+                    run_start = col;
+                    in_run    = true;
+                } else if (!set && in_run) {
+                    uint8_t run_len = col - run_start;
+                    _setWindow(x + run_start, y + row, x + col - 1, y + row);
+                    uint8_t *p = _txbuf;
+                    for (uint8_t i = 0; i < run_len; i++) {
+                        *p++ = fr; *p++ = fg; *p++ = fb;
+                    }
+                    _dmaWrite(_txbuf, (uint32_t)run_len * 3);
+                    in_run = false;
+                }
+            }
+            if (in_run) {
+                uint8_t run_len = gw - run_start;
+                _setWindow(x + run_start, y + row, x + gw - 1, y + row);
+                uint8_t *p = _txbuf;
+                for (uint8_t i = 0; i < run_len; i++) {
+                    *p++ = fr; *p++ = fg; *p++ = fb;
+                }
+                _dmaWrite(_txbuf, (uint32_t)run_len * 3);
+            }
+        }
+        _endTransaction();
+        return 6;
+    }
+
     if (_textFont == 2) {
         uint32_t flash_addr  = pgm_read_dword(&chrtbl_f16[uc]);
         uint8_t  width       = pgm_read_byte(widtbl_f16 + uc);

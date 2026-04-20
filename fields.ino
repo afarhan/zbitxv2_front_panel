@@ -488,14 +488,10 @@ void smeter_draw(struct field *f){
 	char temp_str[100];
 	static int count = 0;
 
-	if (count++ % 25)
+	if (count++ % 5)
 		return;
 
 	screen_fill_rect(f->x, f->y, f->w, f->h, TFT_BLACK);
-
-	int v = vbatt/10;
-	sprintf(temp_str, "+%d.%dv", v/10, v%10);
-	screen_draw_text(temp_str, -1, f->x + 155, f->y+1, TFT_WHITE, 1);
 
 	struct field *f_tx = field_get("IN_TX");
 	if (!f_tx){
@@ -535,6 +531,11 @@ void smeter_draw(struct field *f){
 		screen_draw_text(temp_str, -1, f->x + 5 + (i * 20), f->y+7, TFT_WHITE, 1);
 		//screen_draw_text(temp_str, -1, f->x + 130, f->y+6, TFT_WHITE, 1);
 	}
+  int v = vbatt/10;
+	sprintf(temp_str, "+%d.%dv", v/10, v%10);
+	screen_draw_text(temp_str, -1, f->x + 150, f->y + 1, TFT_WHITE, 1);
+  Serial.printf("%s at %d %d\n", temp_str, f->x + 100, f->y+1);
+
 }
 
 void field_static_draw(field *f){
