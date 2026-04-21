@@ -534,7 +534,7 @@ void smeter_draw(struct field *f){
   int v = vbatt/10;
 	sprintf(temp_str, "+%d.%dv", v/10, v%10);
 	screen_draw_text(temp_str, -1, f->x + 150, f->y + 1, TFT_WHITE, 1);
-  Serial.printf("%s at %d %d\n", temp_str, f->x + 100, f->y+1);
+  //Serial.printf("%s at %d %d\n", temp_str, f->x + 100, f->y+1);
 
 }
 
