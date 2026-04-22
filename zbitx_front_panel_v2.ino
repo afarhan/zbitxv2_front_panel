@@ -41,6 +41,9 @@ char temp_key[32];
 uint8_t stream_state = STREAM_WIFI_OFFLINE;
 const char* host = "192.168.4.1";
 const uint16_t port = 8081;
+unsigned long last_rx_ms = 0;
+const unsigned long SERVER_RX_TIMEOUT_MS = 10000;
+const unsigned long WIFI_CONNECT_TIMEOUT_MS = 15000;
 
 
 unsigned int core1_time = 0;
@@ -153,6 +156,12 @@ void set_bandwidth_strip(){
 	waterfall_bandwidth(low, high, pitch, tx_pitch);
 }
 
+void reset_tokenizer(){
+	cmd_in_label = true;
+  cmd_in_field = true;
+	memset(cmd_label, 0, sizeof(cmd_label));
+	memset(cmd_value, 0, sizeof(cmd_value));
+}
 void command_tokenize(char c){
 
   if (c == '\n'){
@@ -170,13 +179,13 @@ void command_tokenize(char c){
 				|| !strcmp(cmd_label, "SPAN") || !strcmp(cmd_label, "MODE"))
 				set_bandwidth_strip();	
     }
-    cmd_in_label = true;
-    cmd_in_field = true;
-		memset(cmd_label, 0, sizeof(cmd_label));
-		memset(cmd_value, 0, sizeof(cmd_value));
+		reset_tokenizer();
   }
-  else if (!cmd_in_field) // only:0 handle characters between { and }
-    return;
+  else if (!cmd_in_field){ // only:0 handle characters between { and }
+		Serial.println("\n\n\n\n****Reseting the tokenizer\n");
+		reset_tokenizer();
+	  return;
+	}
   else if (cmd_in_label){
     //label is delimited by space
     if (c != ' ' && strlen(cmd_label) < sizeof(cmd_label)-1){
@@ -192,15 +201,22 @@ void command_tokenize(char c){
     cmd_value[i++] = c;
     cmd_value[i] = 0;
   }
+	else
+		reset_tokenizer();
 }
 
 // I2c routines
 // we separate out the updates with \n character
 void send_text(char *text){
 
-	if (client.connected()){
-//		Debug.println(text);
-		client.print(text);
+	if (!client.connected())
+		return;
+
+	int len = strlen(text);
+	int written = client.print(text);
+	if (written != len){
+		Serial.println("short write, dropping tcp");
+		client.stop();
 	}
 }
 
@@ -210,7 +226,7 @@ void send_updates(){
 	int update_count;
 	static unsigned int next_adc_update = 0;
 
-//	Serial.println(__LINE__);
+	Serial.println("sending updates");
 	send_text("?\n");
  
  	update_count = 0;
@@ -459,6 +475,49 @@ void loop1(void) {
 */
 
 void wifi_poll(){
+	static bool wifi_connected = false;
+	static bool begin_issued = false;
+	static unsigned long begin_started = 0;
+
+	if (WiFi.status() == WL_CONNECTED){
+		if (!wifi_connected){
+			field_set("9", "WiFi is connected to the radio\n", false);
+			Debug.println("Online");
+			set_state(STREAM_WIFI_ONLINE);
+			wifi_connected = true;
+			begin_issued = false;
+		}
+		else if (stream_state == STREAM_WIFI_OFFLINE)
+			set_state(STREAM_WIFI_ONLINE);
+		return;
+	}
+
+	if (wifi_connected){
+		field_set("9", "WiFi is disconnected\n", false);
+		set_state(STREAM_WIFI_OFFLINE);
+		wifi_connected = false;
+		begin_issued = false;
+	}
+
+	if (!begin_issued){
+		Serial.println("wifi begin");
+		set_state(STREAM_WIFI_CONNECTING);
+		WiFi.mode(WIFI_STA);
+		WiFi.begin("zbitx", "zbitx12345");
+		begin_started = millis();
+		begin_issued = true;
+		return;
+	}
+
+	// association in progress — give it time, don't tear down
+	if (millis() - begin_started > WIFI_CONNECT_TIMEOUT_MS){
+		Serial.println("wifi connect timed out, retrying");
+		WiFi.disconnect();
+		begin_issued = false;
+	}
+}
+
+void wifi_multi_poll(){
   bool trying_new_ssid = false;
 	static bool wifi_connected = false;
 
@@ -547,36 +606,55 @@ void loop() {
 
   wifi_poll();
   core1_check();
-	delay(5);
+	delay(100);
 
+	//Serial.printf("%u\n", millis());
 	//if the client is connected
-	if (WiFi.status() != WL_CONNECTED){
+	//if (!WiFi.isConnected()){
 	//	Debug.println(__LINE__);
-		return;
-	}
+	//	return;
+	//}
 
 	if (!client.connected()){
-		if (!client.connect(host, port))
+		set_state(STREAM_SERVER_CONNECTING);
+		if (!client.connect(host, port)){
+			Serial.println("tcp failed");
 			return;
+		}
+
+		client.setNoDelay(true);
+		client.keepAlive(5, 2, 3); // idle 5s, probe every 2s, 3 probes -> ~11s to detect dead peer
+		last_rx_ms = millis();
+		set_state(STREAM_SERVER_CONNECTED);
 		Debug.println("Connected to the remote\n");
 		field_set("9", "Connected to the remote!\n", false);
-		client.setTimeout(10000);
 	}
 
-	netavailable = client.available();
-	bytes_to_read = sizeof(buff);
-
-	if (netavailable > 0){
-		if (bytes_to_read > netavailable)
-			bytes_to_read = netavailable;
-		size_t actually_read = client.readBytes(buff, bytes_to_read);
-		for (int i = 0; i < actually_read; i++)
-			command_tokenize(buff[i]);
+	bool got_data = false;
+	uint8_t rbuf[256];
+	int avail;
+	while ((avail = client.available()) > 0){
+		int n = avail > (int)sizeof(rbuf) ? (int)sizeof(rbuf) : avail;
+		int actually = client.read(rbuf, n);
+		if (actually <= 0)
+			break;
+		for (int i = 0; i < actually; i++)
+			command_tokenize(rbuf[i]);
+		got_data = true;
 	}
 
+	if (got_data)
+		last_rx_ms = millis();
+	else if (millis() - last_rx_ms > SERVER_RX_TIMEOUT_MS){
+		Debug.println("no rx from server, reconnecting");
+		field_set("9", "Server silent, reconnecting...\n", false);
+		client.stop();
+		return;
+	}
+	
 	unsigned int now = millis();
   core1_time = millis();
-
+	
 	if (next_update < now){
 		//these can be the result of moues or encoder inputs
 		send_updates();
