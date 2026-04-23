@@ -142,7 +142,7 @@ void field_set_panel(const char *mode){
 void field_set(const char *label, const char *value, bool update_to_radio){
   struct field *f;
 
-  Serial.printf("%s > [%s]\n", label, value);
+  //Serial.printf("%s\n", label);
 
   if (strstr(label, "SPECTRUM"))
     return;
