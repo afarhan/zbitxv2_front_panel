@@ -446,7 +446,7 @@ void setup1() {
 	attachInterrupt(ENC_A, on_enc, CHANGE);
 	attachInterrupt(ENC_B, on_enc, CHANGE);
 
-	field_set("9", "zBitx firmware v2.03 20026-04-23\nWaiting for the zbitx wifi...\n", false);
+	field_set("9", "zBitx firmware v2.03 2026-04-23\nWaiting for the zbitx wifi...\n", false);
 
 	if (digitalRead(ENC_S) == LOW)
 		reset_usb_boot(0,0); //invokes reset into bootloader mode
@@ -457,16 +457,9 @@ void loop1(void) {
 
 	now = millis();
   core1_time = millis();
-/*
-	if (next_update < now &&  client.connected() ){
-		//these can be the result of moues or encoder inputs
-		send_updates();
-		next_update = now + 200;
-	}
-*/
 	ui_slice();
   measure_voltages();
-  delay(50);
+  delay(100);
 }
 
 /*
@@ -516,154 +509,6 @@ void wifi_poll(){
 	}
 }
 
-void wifi_multi_poll(){
-  bool trying_new_ssid = false;
-	static bool wifi_connected = false;
-
-//	Debug.println(__LINE__);
-	if (WiFi.status() == WL_CONNECTED){
-		if (wifi_connected == false){
-			field_set("9", "WiFi is connected to the radio\n", false);
-  		Debug.println("Online"); //Debug.println(WiFi.localIP());
-		}
-		else if (stream_state == STREAM_WIFI_OFFLINE)
-			set_state(STREAM_WIFI_ONLINE);
-		wifi_connected = true;
-//	Debug.println(__LINE__);
-		return;
-	}
-
-	if (wifi_connected == true)
-		field_set("9", "WiFi is disconnected\n", false);
-
-	// the wifi is not on
-  WiFi.disconnect();
-  set_state(STREAM_WIFI_OFFLINE);
-  multi.clearAPList();
-	wifi_connected = false;
-
-	//try out the new ap if any
-	if (strlen(temp_key)){
-		Debug.printf("connecting with temp_key to ap: %s / %s\n", temp_ssid, temp_key);
-		multi.addAP(temp_ssid, temp_key);
-    trying_new_ssid = true;
-	}
-  	else {
-		//Debug.printf("trying with saved keys without temp_key[%s/%s]\n", temp_ssid, temp_key);
-		int n_aps = 0;
-		multi.addAP("zbitx", "zbitx12345");
-  	for (int i = 0; i < MAX_APS; i++)
-    	if (block.ap_list[i].ssid[0]){
-      	multi.addAP(block.ap_list[i].ssid, block.ap_list[i].key);
-				n_aps++;
-			}
-	}
-
-	Serial.println("wifi start run");
-	set_state(STREAM_WIFI_CONNECTING);
-  if (multi.run() == WL_CONNECTED){
-		Serial.println("Wifi was connected");
-		if (wifi_connected == false){
-    	set_state(STREAM_WIFI_ONLINE);
-		}
-
-		//if we had tried out a new wifi ap, 
-		// store it
-		if (strlen(temp_key))
-			wifi_save(temp_ssid, temp_key);
-//		else 
-//			Debug.println("temp_key was null");
-	}else {
-		//Debug.println("keys didn't work");
-		//field_set("9", "WiFi keys didn't work...\n", false);
-
-		//if we were trying a new wifi ap and it failed ..
-		Serial.println("Wifi faield to connect");
-		if (trying_new_ssid){
-  		//clear out
-			temp_ssid[0] = 0;
-			temp_key[0] = 0;
-		}
-	}
-}
-
-/* new stuff 
-void setup(){
-	Serial1.setTX(16);
-  Serial1.setRX(17);
-  Debug.begin(115200);
-
-  while (!Debug && millis() < 3000)
-		NULL;
-	Debug.println("booting zbitx front panel 2.03 2026/04/17");
-	wifi_init();
-	block_dump();
-}
-
-void loop() {
-  size_t mp3available, netavailable, bytes_to_read;
-	static uint32_t next_update = 0;
-
-  wifi_poll();
-  core1_check();
-	delay(100);
-
-	//Serial.printf("%u\n", millis());
-	//if the client is connected
-	//if (!WiFi.isConnected()){
-	//	Debug.println(__LINE__);
-	//	return;
-	//}
-
-	if (!client.connected()){
-		set_state(STREAM_SERVER_CONNECTING);
-		if (!client.connect(host, port)){
-			Serial.println("tcp failed");
-			return;
-		}
-
-		client.setNoDelay(true);
-		client.keepAlive(5, 2, 3); // idle 5s, probe every 2s, 3 probes -> ~11s to detect dead peer
-		last_rx_ms = millis();
-		set_state(STREAM_SERVER_CONNECTED);
-		Debug.println("Connected to the remote\n");
-		field_set("9", "Connected to the remote!\n", false);
-	}
-
-	bool got_data = false;
-	uint8_t rbuf[256];
-	int avail;
-	while ((avail = client.available()) > 0){
-		int n = avail > (int)sizeof(rbuf) ? (int)sizeof(rbuf) : avail;
-		int actually = client.read(rbuf, n);
-		if (actually <= 0)
-			break;
-		for (int i = 0; i < actually; i++)
-			command_tokenize(rbuf[i]);
-		got_data = true;
-	}
-
-	if (got_data)
-		last_rx_ms = millis();
-	else if (millis() - last_rx_ms > SERVER_RX_TIMEOUT_MS){
-		Debug.println("no rx from server, reconnecting");
-		field_set("9", "Server silent, reconnecting...\n", false);
-		client.stop();
-		return;
-	}
-	
-	unsigned int now = millis();
-  core1_time = millis();
-	
-	if (next_update < now){
-		//these can be the result of moues or encoder inputs
-		send_updates();
-		next_update = now + 200;
-	}
-}
-*/
-
-// old stuff
 
 void setup(){
 	Serial1.setTX(16);
@@ -675,94 +520,6 @@ void setup(){
 	Debug.println("booting zbitx front panel 2.03 2026/04/17");
 	wifi_init();
 	block_dump();
-}
-
-void wifi_check(){
-
-}
-
-unsigned int next_tick;
-
-void loop6(){
-	char buff[5000];
-
-	Serial.println("startig the loop");
-	if(WiFi.status() != WL_CONNECTED){
-		Serial.println("retrying WiFi link");
-		WiFi.disconnect();
-		delay(500);
-		WiFi.mode(WIFI_STA);
-		WiFi.noLowPowerMode();
-		Serial.println("starting WiFi.begin()");
-		WiFi.begin("zbitx", "zbitx12345");
-		unsigned long t0 = millis();
-		while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000){
-			Serial.print(".");
-			delay(250);
-		}
-		Serial.println();
-		Serial.printf("exited begin loop, status=%d\n", WiFi.status());
-		if (WiFi.status() != WL_CONNECTED){
-			Serial.println("loop failed to connect to wifi");
-			return;
-		}
-		Serial.println("Wifi got connected");
-		delay(200);
-		Serial.println("setting pm");
-		Serial.println("pm set");
-	}
-	else
-		Serial.println("Wifi is connected");
-	client.setTimeout(10000);
-	if (!client.connect(host, port)){
-		Serial.println("tcp connection failed");
-		delay(500);
-		return;
-	}
-	Serial.println("connected to tcp");
-	client.setNoDelay(true);
-	client.setSync(true);
-	next_tick = millis() + 200;
-	//client.setTimeout(10000);
-	unsigned int last_recv = millis();
-	while(client.connected()){
-		unsigned int now = millis();
-
-		//timeout if no updates from the otherside
-		if (last_recv + 5000 < now){
-			Serial.println("tcp timeout");
-			break;
-		}
-
-		if (next_tick <= now){
-			client.print("?\n");
-			next_tick = now + 200;
-			Serial.println("query");
-		}
-		int netavailable = client.available();
-		if (netavailable > 0){
-			int bytestoread = sizeof(buff)-1;
-			if (bytestoread > netavailable)
-				bytestoread = netavailable;
-			size_t actually_read = client.readBytes(buff, bytestoread);
-			if (actually_read > 0){
-				buff[(int)actually_read] = 0;
-				Serial.printf("pong %d ", actually_read);
-				//Serial.printf("rx: %s\n", buff);
-				for (int i = 0; i < actually_read; i++)
-					command_tokenize(buff[i]);
-				last_recv = millis();
-			}
-		}
-		else {
-			yield();
-			delay(10);
-		}
-	}
-	Serial.println("tcp dropped");
-	client.stop();
-	delay(1000);
-	//WiFi.disconnect();
 }
 
 void loop() {
@@ -810,6 +567,4 @@ void loop() {
 		next_update = now + 200;
 	}
 }
-
-//
 
