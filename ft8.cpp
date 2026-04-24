@@ -35,8 +35,9 @@ void ft8_update(const char *msg){
   //#G121145  16 -16 1797 ~ #GDG5YPR #RIZ2FOS #SJN55
   char buff[100], *p;
 
+	Serial.printf("ft8: %s\n", msg);
+
   struct ft8_message *m = ft8_list + ft8_next;
-  
   strcpy(buff, msg);
 
   p = strtok(buff, " ");
@@ -46,7 +47,8 @@ void ft8_update(const char *msg){
   p = strtok(NULL, " ");
   if (!p) return;
   m->signal_strength = atoi(p);
- 
+	Serial.printf("snr %d vs %s\n", m->signal_strength, p);
+
   p = strtok(NULL, " ");
   if (!p) return;
   m->frequency = atoi(p);

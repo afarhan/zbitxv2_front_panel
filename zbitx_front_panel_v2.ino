@@ -226,7 +226,7 @@ void send_updates(){
 	int update_count;
 	static unsigned int next_adc_update = 0;
 
-	Serial.println("@");
+//	Serial.println("@");
 	send_text("?\n");
  
  	update_count = 0;
@@ -299,19 +299,6 @@ void measure_voltages(){
 	
 	//if (vfwd > 20)
 	vfwd = 3 + ((vfwd)/2);
-
-	//handle the non-linear diode rectification of rf at low levels
-	/*if (vfwd <= 1)
-		vfwd = 0;
-	else if (vfwd < 3)
-		vfwd *= 2;
-	else if (vfwd < 12)
-		vfwd *= 3;
-	else*/ 
-	//	vfwd = (vfwd - 14);
-
-	//Debug.printf("%d %d %d %d\n", af, ar, (vfwd * vfwd)/10, vswr);
-
 
 	// update only once in a while
 	next_reading_update = now + 50;
@@ -528,7 +515,7 @@ void loop() {
 
   wifi_poll();
   core1_check();
-	delay(5);
+	delay(50);
 
 	//if the client is connected
 	if (WiFi.status() != WL_CONNECTED){
