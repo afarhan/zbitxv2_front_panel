@@ -11,8 +11,8 @@ int ft8_cursor = 0;
 int ft8_id = 1;
 unsigned long ft8_cursor_timeout = 0;
 int ft8_top = 0;
-unsigned long last_ft8_cursor_movement = 0;
-
+unsigned long last_ft8_selected = 0;
+char message_buffer[100];
 
 void ft8_init(){
   memset(ft8_list, 0, sizeof(ft8_list));
@@ -21,21 +21,39 @@ void ft8_init(){
 	ft8_id = 1;
 	ft8_cursor_timeout = 0;
 	ft8_top = 0;
-	last_ft8_cursor_movement = 0;
+	last_ft8_selected = 0;
 }
 
 void ft8_select(){
-	char buff[200];
-
+	char *p, *q;
 	struct ft8_message *m = ft8_list + ft8_cursor;
-	sprintf(message_buffer, "FT8 %s\n", m->data);
+
+	if (strlen(m->data) >= sizeof(message_buffer))
+		return;
+
+	p = m->data;
+	strcpy(message_buffer,"FT8 ");
+	q = message_buffer + strlen(message_buffer);
+	while (*p){
+		//skip the '#x'
+		if (*p == '#'){
+			p++;
+			if (*p)
+				p++;
+			continue;
+		}
+		*q++ = *p++;
+	}
+	//close with a new line
+	*q++ = '\n';
+	*q = 0;
 }
 
 void ft8_update(const char *msg){
   //#G121145  16 -16 1797 ~ #GDG5YPR #RIZ2FOS #SJN55
   char buff[100], *p;
 
-	Serial.printf("ft8: %s\n", msg);
+	//Serial.printf("ft8: %s\n", msg);
 
   struct ft8_message *m = ft8_list + ft8_next;
   strcpy(buff, msg);
@@ -47,7 +65,6 @@ void ft8_update(const char *msg){
   p = strtok(NULL, " ");
   if (!p) return;
   m->signal_strength = atoi(p);
-	Serial.printf("snr %d vs %s\n", m->signal_strength, p);
 
   p = strtok(NULL, " ");
   if (!p) return;
@@ -65,10 +82,13 @@ void ft8_update(const char *msg){
   }
   strcpy(m->data, msg);  
   ft8_next++;
+	
   if (ft8_next >= FT8_MAX)
 		ft8_next = 0;
 	if (ft8_next == ft8_cursor)
 		ft8_cursor = -1;
+	
+	//Serial.printf("ft8_update cursor = %d\n", ft8_cursor);
 }
 
 //by can be -ve
@@ -103,19 +123,22 @@ void ft8_move_cursor(int by){
 	//check that it is a valid message (ids start from 1, not zero)
 	if (ft8_list[new_cursor].id > 0)
 		ft8_cursor = new_cursor;
-	last_ft8_cursor_movement = millis();
+	last_ft8_selected = millis();
 }
 
 void ft8_draw(field *f){
   int count = f->h / screen_text_height(2);
 
-	if (last_ft8_cursor_movement + 30000 < millis())
+	if (last_ft8_selected + 30000 < millis()){
+		//Serial.println("resetting the ft8 cursor");
 		ft8_cursor = -1;
+	}
 
 	//display all the latest fields
 	if (ft8_cursor == -1){
 		//Adjust the top to show last messages
 		ft8_top = ft8_new_index(ft8_next, -count);
+		//Serial.printf("ft8_top is %d, next:%d, count %d\n", ft8_top, ft8_next, count);
 	}
 	else {
 		if (ft8_cursor >= 0 && ft8_list[ft8_cursor].id < ft8_list[ft8_top].id && ft8_list[ft8_cursor].id > 0){
@@ -125,6 +148,7 @@ void ft8_draw(field *f){
 			ft8_top = ft8_new_index(ft8_cursor, -count + 1);
 		}
 	}
+	Serial.printf("ft8_top in draw: %d\n", ft8_top);
 
 	screen_fill_rect(f->x, f->y, f->w, f->h, TFT_BLACK);
   int index = ft8_top ; //ft8_next - count;
@@ -190,3 +214,15 @@ void ft8_input(int input){
 		ft8_select();
 	}
 }
+
+void ft8_touched(int x_offset, int y_offset){
+	int from_top = y_offset/screen_text_height(2);
+	//if (ft8_top + from_top < ft8_next)
+	ft8_cursor = ft8_top + from_top;
+	if (ft8_cursor >= FT8_MAX)
+		ft8_cursor -= FT8_MAX;
+	last_ft8_selected = millis();
+	ft8_select();
+	Serial.printf("after tap cursor is at %d %d:%d:%d\n", y_offset/screen_text_height(2), ft8_top, ft8_cursor, ft8_next);
+}
+

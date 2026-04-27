@@ -716,7 +716,6 @@ bool TFT_ILI9488::_validTouch(uint16_t *x, uint16_t *y, uint16_t threshold) {
         return false;
     }
     _getTouchRaw(&x1, &y1);
-    Serial.printf("raw1 %u, %u\n", x1, y1);
     delay(1);
     if (_getTouchRawZ() <= threshold) return false;
     delay(2);
@@ -724,7 +723,6 @@ bool TFT_ILI9488::_validTouch(uint16_t *x, uint16_t *y, uint16_t threshold) {
     if (abs((int16_t)x1 - (int16_t)x2) > _RAWERR) return false;
     if (abs((int16_t)y1 - (int16_t)y2) > _RAWERR) return false;
     *x = x1; *y = y1;
-    Serial.printf("raw1 %u vs %u, %u vs %u\n", x1, x2, y1, y2);
     return true;
 }
 

@@ -142,8 +142,6 @@ void field_set_panel(const char *mode){
 void field_set(const char *label, const char *value, bool update_to_radio){
   struct field *f;
 
-  //Serial.printf("%s\n", label);
-
   if (strstr(label, "SPECTRUM"))
     return;
 
@@ -162,6 +160,7 @@ void field_set(const char *label, const char *value, bool update_to_radio){
   if (!f){
     return;
   }
+  //Serial.printf("%s = %s \n", label, value);
 
   if (update_to_radio)
 		field_post_to_radio(f);
@@ -765,6 +764,14 @@ void field_input(uint8_t input){
 	field_post_to_radio(f_selected);
   f_selected->redraw = true;
 }
+
+void field_tapped(struct field *f, uint16_t x, uint16_t y){
+  if (f->type == FIELD_FT8){
+    ft8_touched(x - f->x, y - f->y);
+    f->redraw = true;
+  }
+}
+
 
 void field_draw_all(bool all){
   struct field *f;

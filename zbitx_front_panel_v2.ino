@@ -35,7 +35,7 @@ int wheel_move = 0;
 //wifi connectivity stuff
 WiFiClient client;
 WiFiMulti multi;
-char message_buffer[100];
+extern char message_buffer[];
 char temp_ssid[32];
 char temp_key[32];
 uint8_t stream_state = STREAM_WIFI_OFFLINE;
@@ -182,7 +182,7 @@ void command_tokenize(char c){
 		reset_tokenizer();
   }
   else if (!cmd_in_field){ // only:0 handle characters between { and }
-		Serial.println("\n\n\n\n****Reseting the tokenizer\n");
+		//Serial.println("\n\n\n\n****Reseting the tokenizer\n");
 		reset_tokenizer();
 	  return;
 	}
@@ -229,6 +229,12 @@ void send_updates(){
 //	Serial.println("@");
 	send_text("?\n");
  
+	if (message_buffer[0]){
+		Serial.println(message_buffer);
+		send_text(message_buffer);
+		message_buffer[0] = 0;
+	}
+
  	update_count = 0;
 	//check if any button has been pressed
   for (struct field *f = field_list; f->type != -1; f++){
@@ -399,6 +405,8 @@ struct field *ui_slice(){
   //do selection only if the touch has started
   if (!mouse_down){
     field_select(f->label);
+		if (f->type == FIELD_FT8)
+			field_tapped(f, x, y);
 		next_repeat_time = millis() + 1500;
 		f_touched = f;
 	}
@@ -498,6 +506,7 @@ void wifi_poll(){
 
 
 void setup(){
+	message_buffer[0] = 0;
 	Serial1.setTX(16);
   Serial1.setRX(17);
   Debug.begin(115200);
@@ -525,8 +534,10 @@ void loop() {
 
 	if (!client.connected()){
 		Serial.println("trying connect to tcp");
-		if (!client.connect(host, port))
+		if (!client.connect(host, port)){
+			delay(1000);
 			return;
+		}
 		Debug.println("Connected to the remote\n");
 		field_set("9", "Connected to the remote!\n", false);
 		client.setTimeout(10000);
@@ -540,6 +551,8 @@ void loop() {
 			bytes_to_read = netavailable;
 		int start = millis();
 		size_t actually_read = client.readBytes(buff, bytes_to_read);
+		buff[actually_read] = 0;
+		//Serial.printf("tokenizing<<<<<\n%s\n>>>>>>>\n", buff);
 		for (int i = 0; i < actually_read; i++)
 			command_tokenize(buff[i]);
 		//Serial.printf("%d in %d\n", actually_read, millis() - start);
