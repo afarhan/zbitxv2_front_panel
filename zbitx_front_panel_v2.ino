@@ -441,7 +441,7 @@ void setup1() {
 	attachInterrupt(ENC_A, on_enc, CHANGE);
 	attachInterrupt(ENC_B, on_enc, CHANGE);
 
-	field_set("9", "zBitx firmware v2.03 2026-04-23\nWaiting for the zbitx wifi...\n", false);
+	field_set("9", "zBitx firmware v4.00 2026-04-27\nWaiting for the zbitx wifi...\n", false);
 
 	if (digitalRead(ENC_S) == LOW)
 		reset_usb_boot(0,0); //invokes reset into bootloader mode
@@ -513,7 +513,7 @@ void setup(){
 
   while (!Debug && millis() < 3000)
 		NULL;
-	Debug.println("booting zbitx front panel 2.03 2026/04/17");
+	Debug.println("booting zbitx front panel 4.01 2026/04/17");
 	wifi_init();
 	block_dump();
 }
