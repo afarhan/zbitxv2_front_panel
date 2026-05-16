@@ -184,6 +184,15 @@ void ft8_draw(field *f){
       	case 'R':
         	color = TFT_CYAN;
         	break;
+				case 'Q':
+					color = TFT_BLUE;
+					break;
+				case 'O':
+					color = TFT_ORANGE;
+					break;
+				case 'H':
+					color = TFT_DARKGREY;
+					break;
    	   case 'S':
     	    color = TFT_YELLOW;
       	  break;
