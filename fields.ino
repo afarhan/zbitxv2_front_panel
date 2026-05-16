@@ -775,7 +775,7 @@ void field_tapped(struct field *f, uint16_t x, uint16_t y){
 
 void field_draw_all(bool all){
   struct field *f;
-
+  set_bandwidth_strip();
   if (all || redraw_screen)
     screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
 	
