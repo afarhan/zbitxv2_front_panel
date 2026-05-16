@@ -222,7 +222,10 @@ void ft8_touched(int x_offset, int y_offset){
 	if (ft8_cursor >= FT8_MAX)
 		ft8_cursor -= FT8_MAX;
 	last_ft8_selected = millis();
-	ft8_select();
+  struct field *single_tap = field_get("1-TAP-QSO");
+  if (single_tap && !strcmp(single_tap->value, "ON")) {
+    ft8_select();
+  }
 	Serial.printf("after tap cursor is at %d %d:%d:%d\n", y_offset/screen_text_height(2), ft8_top, ft8_cursor, ft8_next);
 }
 
