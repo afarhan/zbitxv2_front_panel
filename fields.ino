@@ -261,7 +261,7 @@ struct field *field_select(const char *label){
 	}
 
 	if (!strcmp(f->label, "SET")){
-		dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CW_INPUT/CW_DELAY/SIDETONE/1-TAP-QSO/CLOSE");
+		dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CW_INPUT/CW_DELAY/SIDETONE/1-TAP-QSO/WIFI-CONN/CLOSE");
 		return NULL;
 	}
 
