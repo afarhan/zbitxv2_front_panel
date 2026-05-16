@@ -261,7 +261,7 @@ struct field *field_select(const char *label){
 	}
 
 	if (!strcmp(f->label, "SET")){
-		dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CW_INPUT/CW_DELAY/SIDETONE/CLOSE");
+		dialog_box("Settings", "MY CALL/MYCALLSIGN/MY GRID/MYGRID/PASS KEY/PASSKEY/CW_INPUT/CW_DELAY/SIDETONE/1-TAP-QSO/WIFI-CONN/CLOSE");
 		return NULL;
 	}
 
@@ -775,7 +775,7 @@ void field_tapped(struct field *f, uint16_t x, uint16_t y){
 
 void field_draw_all(bool all){
   struct field *f;
-
+  set_bandwidth_strip();
   if (all || redraw_screen)
     screen_fill_rect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT,SCREEN_BACKGROUND_COLOR);
 	
